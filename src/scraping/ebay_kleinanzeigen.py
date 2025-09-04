@@ -24,6 +24,9 @@ def fill_search(page, term):
             tried += 1
     return False
 
+def fill_location():
+    pass
+
 def main_search():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=HEADLESS)
