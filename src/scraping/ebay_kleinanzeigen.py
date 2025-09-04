@@ -1,4 +1,5 @@
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
+from src.scraping.selectors import selector_accept, selector_search
 
 SEARCH_TERM = "Gaming PC"
 HEADLESS = False
@@ -17,6 +18,7 @@ def fill_search(page, term):
             el = fn()
             el.wait_for(timeout=2000)
             el.fill(term)
+            print(f"Suchfeld gefunden mit Methode {tried + 1}")
             return True
         except Exception:
             tried += 1
@@ -32,11 +34,7 @@ def main_search():
         page.goto("https://www.kleinanzeigen.de/")
 
         # ggf. Cookie-Banner wegklicken (best effort)
-        for sel in [
-            "button:has-text('Alle akzeptieren')",
-            "button:has-text('Zustimmen')",
-            "button[aria-label*='akzept']",
-        ]:
+        for sel in selector_accept:
             try:
                 if page.locator(sel).first.is_visible():
                     page.locator(sel).first.click()
@@ -57,11 +55,7 @@ def main_search():
         except Exception:
             pass
         if not submitted:
-            for sel in [
-                "button[type='submit']",
-                "button:has-text('Suchen')",
-                "button[aria-label*='Suche']",
-            ]:
+            for sel in selector_search:
                 try:
                     if page.locator(sel).first.is_enabled():
                         page.locator(sel).first.click()
@@ -74,7 +68,7 @@ def main_search():
 
         # 4) Auf Ergebnisse warten und erstes Resultat öffnen
         try:
-            page.wait_for_selector("a[href*='/s-anzeige/']", timeout=15000)
+            page.wait_for_selector("a[href*='/s-anzeige/']", timeout=15000) # Kleinanzeigen Links sehen so aus
         except PWTimeout:
             raise RuntimeError("Keine Ergebnisse gefunden oder Seite zu langsam.")
 
@@ -82,7 +76,7 @@ def main_search():
         # Titel vor dem Klick sichern, falls möglich
         title_preview = None
         try:
-            title_preview = first_result.locator("h2, span, div").first.inner_text(timeout=1000)
+            title_preview = first_result.locator("h2, span, div").first.inner_text(timeout=1000) # Name der Anzeige aus dem html code
         except Exception:
             pass
 
@@ -104,5 +98,5 @@ def main_search():
         print("URL:  ", page.url if page.url else first_url)
 
         # Fenster offen lassen, damit du schauen kannst
-        # input("\nDrück Enter zum Schließen… ")
+        input("\nDrück Enter zum Schließen… ")
         browser.close()
